@@ -1,0 +1,5 @@
+{
+  "name": "Copy of Control de Pagos de Alumnos",
+  "description": "Una herramienta para gestionar alumnos y registrar sus pagos de colegiaturas, con almacenamiento de datos de forma local en el navegador.",
+  "requestFramePermissions": []
+}
