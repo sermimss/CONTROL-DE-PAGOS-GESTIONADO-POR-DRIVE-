@@ -2,19 +2,9 @@
 
 import { Student, Payment } from '../types';
 
-// --- ATENCIÓN ---
-// REEMPLAZA ESTOS VALORES CON TUS PROPIAS CREDENCIALES DE GOOGLE CLOUD
-// 1. Ve a https://console.cloud.google.com/
-// 2. Crea un nuevo proyecto.
-// 3. Ve a "APIs y servicios" > "Credenciales".
-// 4. Crea un "ID de cliente de OAuth 2.0" de tipo "Aplicación web".
-//    - En "Orígenes de JavaScript autorizados", añade la URL donde se ejecutará tu app.
-//    - En "URIs de redireccionamiento autorizados", añade la URL también.
-// 5. Crea una "Clave de API".
-// 6. Habilita la "API de Google Drive" en la biblioteca de APIs.
-const CLIENT_ID = 'YOUR_CLIENT_ID.apps.googleusercontent.com'; // Pega tu Client ID aquí
-const API_KEY = 'YOUR_API_KEY'; // Pega tu API Key aquí
-// --- --- --- ---
+// Usar variables de entorno de Vite
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 const DATA_FILE_NAME = 'pagos_alumnos_data_v1.json';
@@ -72,8 +62,9 @@ class GoogleDriveService {
         if (!this.isGapiLoaded) await this.loadGapi();
         if (!this.isGisLoaded) await this.loadGis();
         
-        if (CLIENT_ID.startsWith('YOUR_CLIENT_ID')) {
-             console.warn("Google Drive no funcionará hasta que se configuren el CLIENT_ID y la API_KEY en services/googleDrive.ts");
+        if (!CLIENT_ID || !API_KEY) {
+             console.error("Las credenciales de Google no están configuradas. Verifica las variables de entorno.");
+             alert("Error: Las credenciales de Google Drive no están configuradas correctamente.");
              return;
         }
 
@@ -88,7 +79,6 @@ class GoogleDriveService {
                         client_id: CLIENT_ID,
                         scope: SCOPES,
                         callback: (tokenResponse) => {
-                            // Si hay un error, el token puede ser inválido
                             if (tokenResponse.error) {
                                 console.error('Token error:', tokenResponse.error);
                             }
@@ -113,7 +103,6 @@ class GoogleDriveService {
             } else {
                 this.tokenClient.requestAccessToken({ prompt: '' });
             }
-            // El callback en initClient maneja la respuesta
             resolve();
         });
     }
@@ -135,7 +124,6 @@ class GoogleDriveService {
         if (!token) return null;
         
         try {
-            // Decodificar el JWT del id_token para obtener la información del perfil
             const idToken = token.id_token;
             if (!idToken) return null;
             
@@ -201,7 +189,6 @@ class GoogleDriveService {
     async loadData(): Promise<AppData> {
         const fileId = await this.findFile();
         if (!fileId) {
-            // Si el archivo no existe, creamos uno con datos iniciales vacíos
             await this.createFile({ students: [], payments: [] });
             return { students: [], payments: [] };
         }
@@ -210,7 +197,6 @@ class GoogleDriveService {
                 fileId: fileId,
                 alt: 'media'
             });
-            // Si el archivo está vacío, devuelve la estructura por defecto
             if (!response.body) return { students: [], payments: [] };
             return JSON.parse(response.body);
         } catch (error) {
@@ -226,7 +212,7 @@ class GoogleDriveService {
             if (!fileId) {
                  throw new Error("Could not find or create data file in Google Drive.");
             }
-            return; // Ya se guardó al crear
+            return;
         }
 
         const boundary = '-------314159265358979323846';
